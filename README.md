@@ -51,38 +51,64 @@ pak::pak("morimotoosamu/DirectLiNGAM")
 
 - DiagrammeR
 
-## Example
+## Usage
 
 <https://lingam.readthedocs.io/en/latest/tutorial/lingam.html>
 を再現する
 
-サンプルデータの呼び出しとDirect LiNGAMの実行。
+### Sample Data
 
 ``` r
 library(DirectLiNGAM)
 data(LiNGAM_sample_1000)
 
+m <- matrix(
+  c(0.0, 0.0, 0.0, 3.0, 0.0, 0.0,
+    3.0, 0.0, 2.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 6.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    8.0, 0.0,-1.0, 0.0, 0.0, 0.0,
+    4.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  nrow = 6, byrow = TRUE
+  )
+
+colnames(m) <- rownames(m) <- colnames(LiNGAM_sample_1000)
+
+m |>
+  plot_adjacency_diagrammer(
+  labels      = colnames(LiNGAM_sample_1000),
+  graph_label = "True causal structure",
+  rankdir     = "TB",
+  shape       = "circle"
+)
+```
+
+<img src="man/figures/README-example-1.png" alt="" width="100%" />
+
+### Causal Discovery
+
+``` r
 model <- direct_lingam(LiNGAM_sample_1000)
 ```
 
-推定された因果順序。
+### Causal Order
 
 ``` r
-cat("Index: ", model$causal_order, "\n")
-#> Index:  4 1 3 2 5 6
-cat("Names: ", colnames(LiNGAM_sample_1000)[model$causal_order], "\n")
-#> Names:  x3 x0 x2 x1 x4 x5
+# index number
+model$causal_order
+#> [1] 4 1 3 2 5 6
+
+# variable name
+colnames(LiNGAM_sample_1000)[model$causal_order]
+#> [1] "x3" "x0" "x2" "x1" "x4" "x5"
 ```
 
-推定された隣接行列
+### Estimated Adjacency Matrix
 
 ``` r
 B_hat <- model$adjacency_matrix
 colnames(B_hat) <- rownames(B_hat) <- colnames(LiNGAM_sample_1000)
-cat("\n--- Estimated Adjacency Matrix ---\n")
-#> 
-#> --- Estimated Adjacency Matrix ---
-print(round(B_hat, 3))
+round(B_hat, 3)
 #>       x0     x1     x2     x3     x4 x5
 #> x0 0.000  0.000  0.000  2.994  0.000  0
 #> x1 2.996  0.000  1.996 -0.022  0.000  0
@@ -92,23 +118,25 @@ print(round(B_hat, 3))
 #> x5 4.377 -0.057  0.084 -0.120 -0.022  0
 ```
 
-推定された因果グラフの描画
+### Plot The Estimated Causal Graph
+
+Only paths with a coefficient of 0.5 or greater are being drawn.
 
 ``` r
-plot_adjacency_diagrammer(
-  B_hat,
-  threshold = 1,
-  labels = colnames(LiNGAM_sample_1000),
-  graph_label = "Estimated Causal Structure (Direct LiNGAM)",
-  rankdir = "TB",
-  shape = "ellipse",
-  fillcolor = "lightyellow"
-)
+B_hat |>
+  plot_adjacency_diagrammer(
+      threshold = 0.5,
+      labels = colnames(LiNGAM_sample_1000),
+      graph_label = "Estimated Causal Structure (Direct LiNGAM)",
+      rankdir = "TB",
+      shape = "ellipse",
+      fillcolor = "lightgreen"
+      )
 ```
 
 <img src="man/figures/README-plot_adjacency-1.png" alt="" width="100%" />
 
-総合因果効果の推定
+### Calculating The Total Causal Effect
 
 ``` r
 LiNGAM_sample_1000 |>
@@ -123,20 +151,18 @@ LiNGAM_sample_1000 |>
 #> x5 4.028 -0.056 -0.007 11.898 -0.022  0
 ```
 
-事前知識を用いた推定
+### Inference Based On Prior Knowledge
 
-x0からx5の6変数のデータセット、x3が外生変数、x1、x4、x5がシンク変数であることが事前知識。
+#### Specify In The Index
+
+- x3 is an exogenous variable.
+- x1, x4, and x5 are sink_variables.
 
 ``` r
-data("LiNGAM_sample_1000")
-
-X <- LiNGAM_sample_1000
-
-# インデックスで指定
 pk1 <- make_prior_knowledge(
   n_variables         = 6,
-  exogenous_variables = 4,  #外生変数x3は4個目の変数
-  sink_variables = c(2, 5, 6) #シンク変数x1, x4, x5は2,5,6個目の変数
+  exogenous_variables = 4,
+  sink_variables = c(2, 5, 6)
 )
 
 pk1
@@ -147,16 +173,19 @@ pk1
 #> [4,]    0    0    0   -1    0    0
 #> [5,]   -1    0   -1   -1   -1    0
 #> [6,]   -1    0   -1   -1    0   -1
+```
 
-model_pk1 <- direct_lingam(X, prior_knowledge = pk1)
+``` r
+model_pk1 <- LiNGAM_sample_1000 |>
+  direct_lingam(prior_knowledge = pk1)
 
-# 因果順
-colnames(X)[model_pk1$causal_order]
-#> [1] "x3" "x0" "x2" "x1" "x4" "x5"
+cat("Causal Order: ", colnames(LiNGAM_sample_1000)[model_pk1$causal_order], "\n")
+#> Causal Order:  x3 x0 x2 x1 x4 x5
+```
 
-# 影響力マトリクス
+``` r
 B_pk <- model_pk1$adjacency_matrix
-colnames(B_pk) <- rownames(B_pk) <- colnames(X)
+colnames(B_pk) <- rownames(B_pk) <- colnames(LiNGAM_sample_1000)
 round(B_pk, 3)
 #>       x0 x1     x2     x3 x4 x5
 #> x0 0.000  0  0.000  2.994  0  0
@@ -168,24 +197,25 @@ round(B_pk, 3)
 
 plot_adjacency_diagrammer(
   B_pk,
-    threshold = 1,
-  labels      = colnames(X),
+  threshold = 0.5,
+  labels      = colnames(LiNGAM_sample_1000),
   graph_label = "Estimated (with Prior Knowledge)",
-  rankdir     = "LR",
+  rankdir     = "TB",
   shape       = "circle",
   fillcolor   = "lightgreen"
 )
 ```
 
-<img src="man/figures/README-make_prior_knowledge1-1.png" alt="" width="100%" />
+<img src="man/figures/README-LiNGAM_with_pk_2-1.png" alt="" width="100%" />
 
-変数名で指定
+#### Specify By Variable Name
+
+- x3 is an exogenous variable.
+- x1, x4, and x5 are sink_variables.
+- There is a path from x3 to x0 and from x3 to x2.
+- There is no path from x3 to x5.
 
 ``` r
-data("LiNGAM_sample_1000")
-
-X <- LiNGAM_sample_1000
-
 pk2 <- make_prior_knowledge(
   n_variables         = 6,
   exogenous_variables = "x3",
@@ -203,16 +233,19 @@ pk2
 #> x3  0  0  0 -1  0  0
 #> x4 -1  0 -1 -1 -1  0
 #> x5 -1  0 -1  0  0 -1
+```
 
-model_pk2 <- direct_lingam(X, prior_knowledge = pk2)
+``` r
+model_pk2 <- LiNGAM_sample_1000 |>
+  direct_lingam(prior_knowledge = pk2)
 
-# 因果順
-colnames(X)[model_pk2$causal_order]
-#> [1] "x3" "x0" "x2" "x1" "x4" "x5"
+cat("Causal Order: ", colnames(LiNGAM_sample_1000)[model_pk2$causal_order], "\n")
+#> Causal Order:  x3 x0 x2 x1 x4 x5
+```
 
-# 影響力マトリクス
+``` r
 B_pk <- model_pk2$adjacency_matrix
-colnames(B_pk) <- rownames(B_pk) <- colnames(X)
+colnames(B_pk) <- rownames(B_pk) <- colnames(LiNGAM_sample_1000)
 round(B_pk, 3)
 #>       x0 x1     x2     x3 x4 x5
 #> x0 0.000  0  0.000  2.994  0  0
@@ -222,31 +255,29 @@ round(B_pk, 3)
 #> x4 8.002  0 -0.997 -0.056  0  0
 #> x5 4.021  0 -0.023  0.000  0  0
 
-plot_adjacency_diagrammer(
-  B_pk,
-  threshold = 0.1,
-  labels      = colnames(X),
-  graph_label = "Estimated (with Prior Knowledge)",
-  rankdir     = "LR",
-  shape       = "circle",
-  fillcolor   = "lightgreen"
+B_pk |>
+  plot_adjacency_diagrammer(
+    threshold = 0.5,
+    labels      = colnames(LiNGAM_sample_1000),
+    graph_label = "Estimated (with Prior Knowledge)",
+    rankdir     = "TB",
+    shape       = "circle",
+    fillcolor   = "lightgreen"
 )
 ```
 
-<img src="man/figures/README-make_prior_knowledge2-1.png" alt="" width="100%" />
+<img src="man/figures/README-LiNGAM_with_pk_4-1.png" alt="" width="100%" />
 
-誤差変数間の独立性検定
-LiNGAMの仮定が破れているかどうかを確認するために、誤差変数間の独立性のp値を算出することができる。得られた行列のi行j列にある値は、誤差変数𝑒𝑖と𝑒𝑗の独立性のp値を示す。
+### Independence between error variables
+
+Calculation of the p-value (default: Spearman)
 
 ``` r
-# サンプルデータの呼び出し
-data(LiNGAM_sample_1000)
+result <- LiNGAM_sample_1000 |>
+  direct_lingam()
 
-# Direct LiNGAM の実行
-result <- direct_lingam(LiNGAM_sample_1000)
-
-# p 値の計算（デフォルト: Spearman）
-p_vals <- get_error_independence_p_values(LiNGAM_sample_1000, result)
+p_vals <- LiNGAM_sample_1000 |>
+  get_error_independence_p_values(result)
 round(p_vals, 3)
 #>       x0    x1    x2    x3    x4    x5
 #> x0    NA 0.962 0.984 0.976 0.977 0.952
@@ -255,9 +286,13 @@ round(p_vals, 3)
 #> x3 0.976 0.988 0.958    NA 0.970 0.902
 #> x4 0.977 0.997 0.966 0.970    NA 0.995
 #> x5 0.952 0.966 0.998 0.902 0.995    NA
+```
 
-# Kendall で計算
-p_vals_k <- get_error_independence_p_values(LiNGAM_sample_1000, result, method = "kendall")
+Calculate using Kendall
+
+``` r
+p_vals_k <- LiNGAM_sample_1000 |>
+  get_error_independence_p_values(result, method = "kendall")
 round(p_vals_k, 3)
 #>       x0    x1    x2    x3    x4    x5
 #> x0    NA 0.969 0.982 0.963 0.971 0.964
