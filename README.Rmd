@@ -52,7 +52,7 @@ pak::pak("morimotoosamu/DirectLiNGAM")
 
 ## Example
 
-# https://lingam.readthedocs.io/en/latest/tutorial/lingam.html を再現する
+https://lingam.readthedocs.io/en/latest/tutorial/lingam.html を再現する
 
 サンプルデータの呼び出しとDirect LiNGAMの実行。
 
@@ -118,7 +118,7 @@ X <- LiNGAM_sample_1000
 pk1 <- make_prior_knowledge(
   n_variables         = 6,
   exogenous_variables = 4,  #外生変数x3は4個目の変数
-  sink_variables = c(1,2,5) #シンク変数x1, x4, x5は2,5,6個目の変数
+  sink_variables = c(2, 5, 6) #シンク変数x1, x4, x5は2,5,6個目の変数
 )
 
 pk1
@@ -212,11 +212,9 @@ round(p_vals_k, 3)
 ## ライセンス
 MIT License
 
-Original work:
-Copyright (c) 2019 T.Ikeuchi, G.Haraoka, M.Ide, W.Kurebayashi, S.Shimizu
+Original work: Copyright (c) 2019 T.Ikeuchi, G.Haraoka, M.Ide, W.Kurebayashi, S.Shimizu
 
-Portions of this work:
-Copyright (c) 2026 O.Morimoto
+Portions of this work: Copyright (c) 2026 O.Morimoto
 
 ## フィードバック
 バグの報告や機能のリクエストは、GitHub の Issues までお寄せください

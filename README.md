@@ -46,7 +46,8 @@ pak::pak("morimotoosamu/DirectLiNGAM")
 
 ## Example
 
-# <https://lingam.readthedocs.io/en/latest/tutorial/lingam.html> を再現する
+<https://lingam.readthedocs.io/en/latest/tutorial/lingam.html>
+を再現する
 
 サンプルデータの呼び出しとDirect LiNGAMの実行。
 
@@ -128,35 +129,35 @@ X <- LiNGAM_sample_1000
 pk1 <- make_prior_knowledge(
   n_variables         = 6,
   exogenous_variables = 4,  #外生変数x3は4個目の変数
-  sink_variables = c(1,2,5) #シンク変数x1, x4, x5は2,5,6個目の変数
+  sink_variables = c(2, 5, 6) #シンク変数x1, x4, x5は2,5,6個目の変数
 )
 
 pk1
 #>      [,1] [,2] [,3] [,4] [,5] [,6]
-#> [1,]   -1    0   -1   -1    0   -1
-#> [2,]    0   -1   -1   -1    0   -1
-#> [3,]    0    0   -1   -1    0   -1
+#> [1,]   -1    0   -1   -1    0    0
+#> [2,]   -1   -1   -1   -1    0    0
+#> [3,]   -1    0   -1   -1    0    0
 #> [4,]    0    0    0   -1    0    0
-#> [5,]    0    0   -1   -1   -1   -1
-#> [6,]    0    0   -1   -1    0   -1
+#> [5,]   -1    0   -1   -1   -1    0
+#> [6,]   -1    0   -1   -1    0   -1
 
 model_pk1 <- direct_lingam(X, prior_knowledge = pk1)
 
 # 因果順
 colnames(X)[model_pk1$causal_order]
-#> [1] "x3" "x2" "x5" "x0" "x4" "x1"
+#> [1] "x3" "x0" "x2" "x1" "x4" "x5"
 
 # 影響力マトリクス
 B_pk <- model_pk1$adjacency_matrix
 colnames(B_pk) <- rownames(B_pk) <- colnames(X)
 round(B_pk, 3)
-#>    x0 x1     x2     x3 x4    x5
-#> x0  0  0  0.005  0.180  0 0.234
-#> x1  0  0  2.012  0.552  0 0.697
-#> x2  0  0  0.000  5.957  0 0.000
-#> x3  0  0  0.000  0.000  0 0.000
-#> x4  0  0 -0.956  1.399  0 1.870
-#> x5  0  0  0.235 10.496  0 0.000
+#>       x0 x1     x2     x3 x4 x5
+#> x0 0.000  0  0.000  2.994  0  0
+#> x1 2.996  0  1.996 -0.022  0  0
+#> x2 0.060  0  0.000  5.776  0  0
+#> x3 0.000  0  0.000  0.000  0  0
+#> x4 8.002  0 -0.997 -0.056  0  0
+#> x5 4.028  0 -0.007 -0.118  0  0
 
 plot_adjacency_diagrammer(
   B_pk,
