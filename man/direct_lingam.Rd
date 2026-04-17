@@ -29,3 +29,6 @@ list(adjacency_matrix, causal_order)
 \description{
 Direct LiNGAM
 }
+\examples{
+# ここの実行例を書き直し
+}

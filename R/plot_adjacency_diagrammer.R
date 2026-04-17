@@ -22,7 +22,23 @@
 #' @param fontsize_edge エッジラベルのフォントサイズ (default: 10)
 #' @param edge_color エッジの色 (default: "gray40")
 #' @param edge_label_color エッジラベルの色 (default: "red")
+#' @param bordercolor 枠線の色
+#' @param debug デバッグモードの有効化 (logical)
 #' @return grViz オブジェクト（DiagrammeR が利用可能な場合）
+#' @importFrom grDevices col2rgb
+#' @export
+#' @examples
+#' # 個々の実行例を書き直す
+#' pk <- make_prior_knowledge(6, exogenous_variables = c(4))
+#'
+#' # 書き直す
+#' pk <- make_prior_knowledge(6,
+#'   exogenous_variables = "x3",
+#'   sink_variables = c("x1", "x4"),
+#'   paths = list(c("x3", "x0"), c("x3", "x2")),
+#'   no_paths = list(c("x5", "x2")),
+#'   labels = c("x0", "x1", "x2", "x3", "x4", "x5")
+#' )
 plot_adjacency_diagrammer <- function(B,
                                       labels = NULL,
                                       threshold = 0.01,
@@ -30,10 +46,12 @@ plot_adjacency_diagrammer <- function(B,
                                       graph_label = "Estimated Causal Structure",
                                       shape = "circle",
                                       fillcolor = "lightyellow",
+                                      bordercolor = "black",
                                       fontsize_node = 14,
                                       fontsize_edge = 10,
                                       edge_color = "gray40",
-                                      edge_label_color = "red") {
+                                      edge_label_color = "red",
+                                      debug = FALSE) {
   # --- DiagrammeR パッケージの確認 ---
   if (!requireNamespace("DiagrammeR", quietly = TRUE)) {
     message("============================================================")
@@ -45,6 +63,34 @@ plot_adjacency_diagrammer <- function(B,
     message("インストール後、再度この関数を実行してください。")
     message("============================================================")
     return(invisible(NULL))
+  }
+
+  # --- 色名をカラーコードに変換するヘルパー ---
+  to_hex <- function(color_str) {
+    if (grepl("^#", color_str)) {
+      return(color_str)
+    } # 既にカラーコードならそのまま
+    tryCatch(
+      {
+        rgb_val <- grDevices::col2rgb(color_str)
+        sprintf("#%02X%02X%02X", rgb_val[1], rgb_val[2], rgb_val[3])
+      },
+      error = function(e) {
+        warning(sprintf("Unknown color '%s', using black.", color_str))
+        "#000000"
+      }
+    )
+  }
+
+  # --- 全ての色をカラーコードに変換 ---
+  fillcolor <- to_hex(fillcolor)
+  edge_color <- to_hex(edge_color)
+  edge_label_color <- to_hex(edge_label_color)
+
+  if (is.null(bordercolor)) {
+    bordercolor <- fillcolor
+  } else {
+    bordercolor <- to_hex(bordercolor)
   }
 
   # --- 引数のバリデーション ---
@@ -73,6 +119,9 @@ plot_adjacency_diagrammer <- function(B,
   p <- ncol(B)
   if (is.null(labels)) labels <- paste0("x", seq_len(p) - 1)
 
+  # --- graph_label のエスケープ ---
+  safe_label <- gsub("'", "\\\\'", graph_label)
+
   # --- エッジ記述の生成 ---
   edge_lines <- c()
   for (i in 1:p) {
@@ -92,28 +141,38 @@ plot_adjacency_diagrammer <- function(B,
     return(invisible(NULL))
   }
 
-  # --- DOT 記述の生成 ---
+  # --- DOT 記述の構築 ---
   dot <- paste0(
     "digraph estimated_structure {\n",
-    sprintf("  graph [rankdir = %s, fontsize = 14,\n", rankdir),
-    sprintf("         label = '%s',\n", graph_label),
-    "         labelloc = t, fontname = 'Helvetica-Bold']\n",
-    sprintf(
-      "  node [shape = %s, style = filled, fillcolor = %s,\n",
-      shape, fillcolor
-    ),
-    sprintf(
-      "        fontname = Helvetica, fontsize = %d, width = 0.6]\n",
-      fontsize_node
-    ),
-    sprintf(
-      "  edge [fontname = Helvetica, fontsize = %d, fontcolor = %s, color = %s]\n\n",
-      fontsize_edge, edge_label_color, edge_color
-    ),
+    "\n",
+    "  graph [rankdir = '", rankdir, "',\n",
+    "         label = '", safe_label, "',\n",
+    "         labelloc = 't',\n",
+    "         fontname = 'Helvetica-Bold',\n",
+    "         fontsize = 14]\n",
+    "\n",
+    "  node [shape = '", shape, "',\n",
+    "        style = 'solid,filled',\n",
+    "        fillcolor = '", fillcolor, "',\n",
+    "        color = '", bordercolor, "',\n",
+    "        fontname = 'Helvetica',\n",
+    "        fontsize = ", fontsize_node, ",\n",
+    "        width = 0.6]\n",
+    "\n",
+    "  edge [fontname = 'Helvetica',\n",
+    "        fontsize = ", fontsize_edge, ",\n",
+    "        fontcolor = '", edge_label_color, "',\n",
+    "        color = '", edge_color, "']\n",
+    "\n",
     paste(edge_lines, collapse = "\n"), "\n",
     "}\n"
   )
 
-  # --- 描画 ---
+  if (debug) {
+    cat("=== Generated DOT ===\n")
+    cat(dot)
+    cat("=====================\n")
+  }
+
   DiagrammeR::grViz(dot)
 }

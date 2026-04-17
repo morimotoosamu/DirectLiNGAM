@@ -3,6 +3,14 @@
 # Based on the Python implementation from the LiNGAM Project
 # https://sites.google.com/view/sshimizu06/lingam
 # https://github.com/cdt15/lingam
+#
+# License: MIT + file LICENSE
+#
+# Original work:
+#   Copyright (c) 2019 T.Ikeuchi, G.Haraoka, M.Ide, W.Kurebayashi, S.Shimizu
+#
+# Portions of this work:
+#   Copyright (c) 2026 O.Morimoto
 # =============================================================================
 
 
@@ -18,6 +26,8 @@
 #' @return list(adjacency_matrix, causal_order)
 #' @importFrom stats sd lm.fit cov median quantile
 #' @export
+#' @examples
+#' # ここの実行例を書き直し
 direct_lingam <- function(X,
                           prior_knowledge = NULL,
                           apply_prior_knowledge_softly = FALSE,
@@ -49,7 +59,7 @@ direct_lingam <- function(X,
   X_ <- X # コピー
 
   if (measure == "kernel") {
-    X_ <- scale(X_) # 標準化
+    X_ <- base::scale(X_) # 標準化
   }
 
   for (iter in seq_len(n_features)) {
@@ -284,7 +294,7 @@ search_causal_order_pwling <- function(X, U, Uc, Vj) {
 
   M_list <- numeric(length(Uc))
 
-  X_std_matrix <- scale(X)
+  X_std_matrix <- base::scale(X)
 
   for (idx in seq_along(Uc)) {
     i <- Uc[idx]
@@ -406,10 +416,13 @@ estimate_adjacency_matrix <- function(X, causal_order, prior_knowledge = NULL) {
 
     # 事前知識で制約
     if (!is.null(prior_knowledge)) {
-      # prior_knowledge[from, to] == 0 のペアを除外
-      # predictors -> target のパスが 0 なら除外
       keep <- sapply(predictors, function(p) {
-        val <- prior_knowledge[p, target]
+        # prior_knowledge[target, p]:
+        #   p → target へのパスの有無
+        #   0 = パスなし → 除外
+        #  -1 = 不明    → 残す
+        #   1 = パスあり → 残す
+        val <- prior_knowledge[target, p]
         is.na(val) || val != 0
       })
       predictors <- predictors[keep]

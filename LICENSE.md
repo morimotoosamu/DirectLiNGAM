@@ -1,6 +1,10 @@
-# MIT License
+# License: MIT + file LICENSE
 
-Copyright (c) 2026 Osamu Morimoto
+Original work:
+Copyright (c) 2019 T.Ikeuchi, G.Haraoka, M.Ide, W.Kurebayashi, S.Shimizu
+
+Portions of this work:
+Copyright (c) 2026 O.Morimoto
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

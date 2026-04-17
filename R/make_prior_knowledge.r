@@ -11,10 +11,9 @@
 #'   list(c(from, to), ...) の形式。インデックスまたは変数名で指定
 #' @param labels 変数名ベクトル (NULL可)
 #'   変数名で指定する場合は必須。data.frame の colnames() 等を渡す
-#'
 #' @return 事前知識行列 (n_variables x n_variables)
 #'   -1: 不明, 0: パスなし, 1: パスあり
-#'
+#' @export
 #' @examples
 #' # インデックスで指定
 #' pk <- make_prior_knowledge(6, exogenous_variables = c(4))

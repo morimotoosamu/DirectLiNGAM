@@ -52,27 +52,29 @@ pak::pak("morimotoosamu/DirectLiNGAM")
 
 ## Example
 
+# https://lingam.readthedocs.io/en/latest/tutorial/lingam.html を再現する
+
 サンプルデータの呼び出しとDirect LiNGAMの実行。
 
 ```{r example}
 library(DirectLiNGAM)
-data(LiNGAM_sample)
+data(LiNGAM_sample_1000)
 
-model <- direct_lingam(LiNGAM_sample)
+model <- direct_lingam(LiNGAM_sample_1000)
 ```
 
 推定された因果順序。
 
 ```{r causal_order}
 cat("Index: ", model$causal_order, "\n")
-cat("Names: ", colnames(LiNGAM_sample)[model$causal_order], "\n")
+cat("Names: ", colnames(LiNGAM_sample_1000)[model$causal_order], "\n")
 ```
 
 推定された隣接行列
 
 ```{r adjacency_matrix}
 B_hat <- model$adjacency_matrix
-colnames(B_hat) <- rownames(B_hat) <- colnames(LiNGAM_sample)
+colnames(B_hat) <- rownames(B_hat) <- colnames(LiNGAM_sample_1000)
 cat("\n--- Estimated Adjacency Matrix ---\n")
 print(round(B_hat, 3))
 ```
@@ -84,7 +86,7 @@ print(round(B_hat, 3))
 plot_adjacency_diagrammer(
   B_hat,
   threshold = 1,
-  labels = colnames(LiNGAM_sample),
+  labels = colnames(LiNGAM_sample_1000),
   graph_label = "Estimated Causal Structure (Direct LiNGAM)",
   rankdir = "TB",
   shape = "ellipse",
@@ -96,16 +98,111 @@ plot_adjacency_diagrammer(
 総合因果効果の推定
 
 ```{r total_effects}
-estimate_all_total_effects(LiNGAM_sample, model)
+LiNGAM_sample_1000 |>
+  estimate_all_total_effects(model) |>
+  round(3)
 ```
 
 
 
 事前知識を用いた推定
 
+x0からx5の6変数のデータセット、x3が外生変数、x1、x4、x5がシンク変数であることが事前知識。
 
-誤差独立性の p 値
+```{r make_prior_knowledge1}
+data("LiNGAM_sample_1000")
 
+X <- LiNGAM_sample_1000
+
+# インデックスで指定
+pk1 <- make_prior_knowledge(
+  n_variables         = 6,
+  exogenous_variables = 4,  #外生変数x3は4個目の変数
+  sink_variables = c(1,2,5) #シンク変数x1, x4, x5は2,5,6個目の変数
+)
+
+pk1
+
+model_pk1 <- direct_lingam(X, prior_knowledge = pk1)
+
+# 因果順
+colnames(X)[model_pk1$causal_order]
+
+# 影響力マトリクス
+B_pk <- model_pk1$adjacency_matrix
+colnames(B_pk) <- rownames(B_pk) <- colnames(X)
+round(B_pk, 3)
+
+plot_adjacency_diagrammer(
+  B_pk,
+    threshold = 1,
+  labels      = colnames(X),
+  graph_label = "Estimated (with Prior Knowledge)",
+  rankdir     = "LR",
+  shape       = "circle",
+  fillcolor   = "lightgreen"
+)
+```
+
+
+変数名で指定
+
+```{r make_prior_knowledge2}
+data("LiNGAM_sample_1000")
+
+X <- LiNGAM_sample_1000
+
+pk2 <- make_prior_knowledge(
+  n_variables         = 6,
+  exogenous_variables = "x3",
+  sink_variables = c("x1", "x4", "x5"),
+  paths = list(c("x3", "x0"), c("x3", "x2")),
+  no_paths = list(c("x3", "x5")),
+  labels = c("x0", "x1", "x2", "x3", "x4", "x5")
+)
+
+pk2
+
+model_pk2 <- direct_lingam(X, prior_knowledge = pk2)
+
+# 因果順
+colnames(X)[model_pk2$causal_order]
+
+# 影響力マトリクス
+B_pk <- model_pk2$adjacency_matrix
+colnames(B_pk) <- rownames(B_pk) <- colnames(X)
+round(B_pk, 3)
+
+plot_adjacency_diagrammer(
+  B_pk,
+  threshold = 0.1,
+  labels      = colnames(X),
+  graph_label = "Estimated (with Prior Knowledge)",
+  rankdir     = "LR",
+  shape       = "circle",
+  fillcolor   = "lightgreen"
+)
+
+```
+
+誤差変数間の独立性検定
+LiNGAMの仮定が破れているかどうかを確認するために、誤差変数間の独立性のp値を算出することができる。得られた行列のi行j列にある値は、誤差変数𝑒𝑖と𝑒𝑗の独立性のp値を示す。
+
+```{r}
+# サンプルデータの呼び出し
+data(LiNGAM_sample_1000)
+
+# Direct LiNGAM の実行
+result <- direct_lingam(LiNGAM_sample_1000)
+
+# p 値の計算（デフォルト: Spearman）
+p_vals <- get_error_independence_p_values(LiNGAM_sample_1000, result)
+round(p_vals, 3)
+
+# Kendall で計算
+p_vals_k <- get_error_independence_p_values(LiNGAM_sample_1000, result, method = "kendall")
+round(p_vals_k, 3)
+```
 
 ## 注意事項
 本パッケージは Python 版のすべての機能を網羅しているわけではありません。
@@ -113,7 +210,13 @@ estimate_all_total_effects(LiNGAM_sample, model)
 本パッケージには Python 版に存在しない機能も追加されています。
 
 ## ライセンス
-MIT License - オリジナルの作者である Shohei Shimizu 氏らに敬意を表します。
+MIT License
+
+Original work:
+Copyright (c) 2019 T.Ikeuchi, G.Haraoka, M.Ide, W.Kurebayashi, S.Shimizu
+
+Portions of this work:
+Copyright (c) 2026 O.Morimoto
 
 ## フィードバック
 バグの報告や機能のリクエストは、GitHub の Issues までお寄せください

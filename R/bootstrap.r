@@ -92,7 +92,16 @@ bootstrap_lingam <- function(X,
   if (!is.numeric(X)) stop("X must be a numeric matrix.")
   if (!is.integer(n_sampling)) n_sampling <- as.integer(n_sampling)
   if (n_sampling <= 0) stop("n_sampling must be an integer greater than 0.")
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {
+    old_seed <- .Random.seed
+    on.exit(
+      {
+        .Random.seed <<- old_seed
+      },
+      add = TRUE
+    )
+    set.seed(seed)
+  }
   n_samples <- nrow(X)
   n_features <- ncol(X)
   # 結果格納用
@@ -259,7 +268,7 @@ get_causal_direction_counts <- function(result,
       to = subset_df$to[1],
       count = length(effects),
       proportion = length(effects) / n_sampling,
-      mean_effect = stats::mean(effects),
+      mean_effect = base::mean(effects),
       median_effect = stats::median(effects),
       sd_effect = if (length(effects) > 1) stats::sd(effects) else 0,
       ci_lower = stats::quantile(effects, 0.025, names = FALSE),
@@ -469,19 +478,20 @@ get_paths <- function(result, from_index, to_index, min_causal_effect = NULL) {
   n_sampling <- dim(am_array)[1]
 
   # 全パスの収集
-  paths_str_list <- c()
-  effects_list <- c()
+  # 事前にリストに蓄積し、最後に unlist
+  paths_collector <- vector("list", n_sampling)
+  effects_collector <- vector("list", n_sampling)
 
   for (s in seq_len(n_sampling)) {
     am <- am_array[s, , ]
     res <- find_all_paths(am, from_index, to_index, min_causal_effect)
     if (length(res$paths) > 0) {
-      for (k in seq_along(res$paths)) {
-        paths_str_list <- c(paths_str_list, paste(res$paths[[k]], collapse = "_"))
-        effects_list <- c(effects_list, res$effects[k])
-      }
+      paths_collector[[s]] <- vapply(res$paths, paste, "", collapse = "_")
+      effects_collector[[s]] <- res$effects
     }
   }
+  paths_str_list <- unlist(paths_collector)
+  effects_list <- unlist(effects_collector)
 
   if (length(paths_str_list) == 0) {
     return(data.frame(path = character(0), effect = numeric(0), probability = numeric(0)))

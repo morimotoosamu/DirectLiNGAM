@@ -46,44 +46,42 @@ pak::pak("morimotoosamu/DirectLiNGAM")
 
 ## Example
 
+# <https://lingam.readthedocs.io/en/latest/tutorial/lingam.html> を再現する
+
 サンプルデータの呼び出しとDirect LiNGAMの実行。
 
 ``` r
 library(DirectLiNGAM)
-data(LiNGAM_sample)
+data(LiNGAM_sample_1000)
 
-model <- direct_lingam(LiNGAM_sample)
+model <- direct_lingam(LiNGAM_sample_1000)
 ```
 
 推定された因果順序。
 
 ``` r
 cat("Index: ", model$causal_order, "\n")
-#> Index:  4 3 1 6 5 8 2 9 7 10
-cat("Names: ", colnames(LiNGAM_sample)[model$causal_order], "\n")
-#> Names:  x3 x2 x0 x5 x4 x7 x1 x8 x6 x9
+#> Index:  4 1 3 2 5 6
+cat("Names: ", colnames(LiNGAM_sample_1000)[model$causal_order], "\n")
+#> Names:  x3 x0 x2 x1 x4 x5
 ```
 
 推定された隣接行列
 
 ``` r
 B_hat <- model$adjacency_matrix
-colnames(B_hat) <- rownames(B_hat) <- colnames(LiNGAM_sample)
+colnames(B_hat) <- rownames(B_hat) <- colnames(LiNGAM_sample_1000)
 cat("\n--- Estimated Adjacency Matrix ---\n")
 #> 
 #> --- Estimated Adjacency Matrix ---
 print(round(B_hat, 3))
-#>        x0     x1     x2     x3     x4     x5    x6     x7    x8 x9
-#> x0  0.000  0.000 -0.010  3.053  0.000  0.000 0.000  0.000 0.000  0
-#> x1  2.973  0.000  1.985  0.094 -0.005  0.002 0.000  0.004 0.000  0
-#> x2  0.000  0.000  0.000  5.994  0.000  0.000 0.000  0.000 0.000  0
-#> x3  0.000  0.000  0.000  0.000  0.000  0.000 0.000  0.000 0.000  0
-#> x4  8.064  0.000 -1.001 -0.003  0.000 -0.016 0.000  0.000 0.000  0
-#> x5  4.010  0.000 -0.018  0.080  0.000  0.000 0.000  0.000 0.000  0
-#> x6 -0.068  1.983  0.024  0.050  0.013 -0.003 0.000 -0.003 0.010  0
-#> x7  3.114  0.000 -0.025  0.083  1.487 -0.004 0.000  0.000 0.000  0
-#> x8  0.047 -0.005  0.522 -0.088  0.011  2.011 0.000 -0.011 0.000  0
-#> x9 -0.019  0.015 -0.017  7.067 -0.026 -0.036 0.993  0.016 0.015  0
+#>       x0     x1     x2     x3     x4 x5
+#> x0 0.000  0.000  0.000  2.994  0.000  0
+#> x1 2.996  0.000  1.996 -0.022  0.000  0
+#> x2 0.060  0.000  0.000  5.776  0.000  0
+#> x3 0.000  0.000  0.000  0.000  0.000  0
+#> x4 8.100 -0.033 -0.932 -0.056  0.000  0
+#> x5 4.377 -0.057  0.084 -0.120 -0.022  0
 ```
 
 推定された因果グラフの描画
@@ -92,7 +90,7 @@ print(round(B_hat, 3))
 plot_adjacency_diagrammer(
   B_hat,
   threshold = 1,
-  labels = colnames(LiNGAM_sample),
+  labels = colnames(LiNGAM_sample_1000),
   graph_label = "Estimated Causal Structure (Direct LiNGAM)",
   rankdir = "TB",
   shape = "ellipse",
@@ -105,34 +103,162 @@ plot_adjacency_diagrammer(
 総合因果効果の推定
 
 ``` r
-estimate_all_total_effects(LiNGAM_sample, model)
-#>           x0          x1          x2        x3            x4           x5
-#> x0  0.000000  0.00000000 -0.01006592  2.993077  0.0000000000  0.000000000
-#> x1  3.000285  0.00000000  1.95406587 20.969321  0.0008783329  0.001802922
-#> x2  0.000000  0.00000000  0.00000000  5.994427  0.0000000000  0.000000000
-#> x3  0.000000  0.00000000  0.00000000  0.000000  0.0000000000  0.000000000
-#> x4  7.999851  0.00000000 -1.08091865 17.943540  0.0000000000 -0.015895887
-#> x5  4.010087  0.00000000 -0.05844897 11.973759  0.0000000000  0.000000000
-#> x6  6.012803  1.98298503  3.89486773 41.944885  0.0104711199  0.020833822
-#> x7 14.997303  0.00000000 -1.66407673 35.895240  1.4873512243 -0.027516599
-#> x8  8.017238 -0.00543654  0.39927394 26.943909 -0.0052182213  2.010616291
-#> x9  6.009163  1.98431849  3.89006150 48.971056  0.0080309484  0.015891490
-#>           x6           x7         x8 x9
-#> x0 0.0000000  0.000000000 0.00000000  0
-#> x1 0.0000000  0.004071862 0.00000000  0
-#> x2 0.0000000  0.000000000 0.00000000  0
-#> x3 0.0000000  0.000000000 0.00000000  0
-#> x4 0.0000000  0.000000000 0.00000000  0
-#> x5 0.0000000  0.000000000 0.00000000  0
-#> x6 0.0000000  0.005135646 0.01029517  0
-#> x7 0.0000000  0.000000000 0.00000000  0
-#> x8 0.0000000 -0.011047144 0.00000000  0
-#> x9 0.9931672  0.021108335 0.02570678  0
+LiNGAM_sample_1000 |>
+  estimate_all_total_effects(model) |>
+  round(3)
+#>       x0     x1     x2     x3     x4 x5
+#> x0 0.000  0.000  0.000  2.994  0.000  0
+#> x1 3.116  0.000  1.996 20.836  0.000  0
+#> x2 0.060  0.000  0.000  5.957  0.000  0
+#> x3 0.000  0.000  0.000  0.000  0.000  0
+#> x4 7.941 -0.033 -0.997 17.957  0.000  0
+#> x5 4.028 -0.056 -0.007 11.898 -0.022  0
 ```
 
 事前知識を用いた推定
 
-誤差独立性の p 値
+x0からx5の6変数のデータセット、x3が外生変数、x1、x4、x5がシンク変数であることが事前知識。
+
+``` r
+data("LiNGAM_sample_1000")
+
+X <- LiNGAM_sample_1000
+
+# インデックスで指定
+pk1 <- make_prior_knowledge(
+  n_variables         = 6,
+  exogenous_variables = 4,  #外生変数x3は4個目の変数
+  sink_variables = c(1,2,5) #シンク変数x1, x4, x5は2,5,6個目の変数
+)
+
+pk1
+#>      [,1] [,2] [,3] [,4] [,5] [,6]
+#> [1,]   -1    0   -1   -1    0   -1
+#> [2,]    0   -1   -1   -1    0   -1
+#> [3,]    0    0   -1   -1    0   -1
+#> [4,]    0    0    0   -1    0    0
+#> [5,]    0    0   -1   -1   -1   -1
+#> [6,]    0    0   -1   -1    0   -1
+
+model_pk1 <- direct_lingam(X, prior_knowledge = pk1)
+
+# 因果順
+colnames(X)[model_pk1$causal_order]
+#> [1] "x3" "x2" "x5" "x0" "x4" "x1"
+
+# 影響力マトリクス
+B_pk <- model_pk1$adjacency_matrix
+colnames(B_pk) <- rownames(B_pk) <- colnames(X)
+round(B_pk, 3)
+#>    x0 x1     x2     x3 x4    x5
+#> x0  0  0  0.005  0.180  0 0.234
+#> x1  0  0  2.012  0.552  0 0.697
+#> x2  0  0  0.000  5.957  0 0.000
+#> x3  0  0  0.000  0.000  0 0.000
+#> x4  0  0 -0.956  1.399  0 1.870
+#> x5  0  0  0.235 10.496  0 0.000
+
+plot_adjacency_diagrammer(
+  B_pk,
+    threshold = 1,
+  labels      = colnames(X),
+  graph_label = "Estimated (with Prior Knowledge)",
+  rankdir     = "LR",
+  shape       = "circle",
+  fillcolor   = "lightgreen"
+)
+```
+
+<img src="man/figures/README-make_prior_knowledge1-1.png" alt="" width="100%" />
+
+変数名で指定
+
+``` r
+data("LiNGAM_sample_1000")
+
+X <- LiNGAM_sample_1000
+
+pk2 <- make_prior_knowledge(
+  n_variables         = 6,
+  exogenous_variables = "x3",
+  sink_variables = c("x1", "x4", "x5"),
+  paths = list(c("x3", "x0"), c("x3", "x2")),
+  no_paths = list(c("x3", "x5")),
+  labels = c("x0", "x1", "x2", "x3", "x4", "x5")
+)
+
+pk2
+#>    x0 x1 x2 x3 x4 x5
+#> x0 -1  0 -1  1  0  0
+#> x1 -1 -1 -1 -1  0  0
+#> x2 -1  0 -1  1  0  0
+#> x3  0  0  0 -1  0  0
+#> x4 -1  0 -1 -1 -1  0
+#> x5 -1  0 -1  0  0 -1
+
+model_pk2 <- direct_lingam(X, prior_knowledge = pk2)
+
+# 因果順
+colnames(X)[model_pk2$causal_order]
+#> [1] "x3" "x0" "x2" "x1" "x4" "x5"
+
+# 影響力マトリクス
+B_pk <- model_pk2$adjacency_matrix
+colnames(B_pk) <- rownames(B_pk) <- colnames(X)
+round(B_pk, 3)
+#>       x0 x1     x2     x3 x4 x5
+#> x0 0.000  0  0.000  2.994  0  0
+#> x1 2.996  0  1.996 -0.022  0  0
+#> x2 0.060  0  0.000  5.776  0  0
+#> x3 0.000  0  0.000  0.000  0  0
+#> x4 8.002  0 -0.997 -0.056  0  0
+#> x5 4.021  0 -0.023  0.000  0  0
+
+plot_adjacency_diagrammer(
+  B_pk,
+  threshold = 0.1,
+  labels      = colnames(X),
+  graph_label = "Estimated (with Prior Knowledge)",
+  rankdir     = "LR",
+  shape       = "circle",
+  fillcolor   = "lightgreen"
+)
+```
+
+<img src="man/figures/README-make_prior_knowledge2-1.png" alt="" width="100%" />
+
+誤差変数間の独立性検定
+LiNGAMの仮定が破れているかどうかを確認するために、誤差変数間の独立性のp値を算出することができる。得られた行列のi行j列にある値は、誤差変数𝑒𝑖と𝑒𝑗の独立性のp値を示す。
+
+``` r
+# サンプルデータの呼び出し
+data(LiNGAM_sample_1000)
+
+# Direct LiNGAM の実行
+result <- direct_lingam(LiNGAM_sample_1000)
+
+# p 値の計算（デフォルト: Spearman）
+p_vals <- get_error_independence_p_values(LiNGAM_sample_1000, result)
+round(p_vals, 3)
+#>       x0    x1    x2    x3    x4    x5
+#> x0    NA 0.962 0.984 0.976 0.977 0.952
+#> x1 0.962    NA 0.998 0.988 0.997 0.966
+#> x2 0.984 0.998    NA 0.958 0.966 0.998
+#> x3 0.976 0.988 0.958    NA 0.970 0.902
+#> x4 0.977 0.997 0.966 0.970    NA 0.995
+#> x5 0.952 0.966 0.998 0.902 0.995    NA
+
+# Kendall で計算
+p_vals_k <- get_error_independence_p_values(LiNGAM_sample_1000, result, method = "kendall")
+round(p_vals_k, 3)
+#>       x0    x1    x2    x3    x4    x5
+#> x0    NA 0.969 0.982 0.963 0.971 0.964
+#> x1 0.969    NA 0.984 0.986 0.996 0.948
+#> x2 0.982 0.984    NA 0.920 0.996 0.995
+#> x3 0.963 0.986 0.920    NA 0.983 0.898
+#> x4 0.971 0.996 0.996 0.983    NA 0.998
+#> x5 0.964 0.948 0.995 0.898 0.998    NA
+```
 
 ## 注意事項
 
@@ -142,8 +268,12 @@ estimate_all_total_effects(LiNGAM_sample, model)
 
 ## ライセンス
 
-MIT License - オリジナルの作者である Shohei Shimizu
-氏らに敬意を表します。
+MIT License
+
+Original work: Copyright (c) 2019 T.Ikeuchi, G.Haraoka, M.Ide,
+W.Kurebayashi, S.Shimizu
+
+Portions of this work: Copyright (c) 2026 O.Morimoto
 
 ## フィードバック
 

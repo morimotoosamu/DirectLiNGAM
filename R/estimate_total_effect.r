@@ -1,21 +1,22 @@
 #' 全変数間の総合因果効果を一括推定
 #'
-#' @description
-#' 指定されたデータと Direct LiNGAM の推定結果（隣接行列と因果順序）を用いて、
-#' 変数間の全ペアの総合因果効果（Total Effects）を、共分散行列を用いて一括で推定します。
-#'
-#' @param X 数値行列 (n_samples x n_features)。
-#' @param lingam_result \code{direct_lingam()} 関数の返り値（隣接行列 \code{adjacency_matrix} と因果順序 \code{causal_order} を含むリスト）。
-#'
-#' @return 総合因果効果の行列。行が結果変数、列が原因変数を表します。
-#'
-#' @details
-#' 各原因変数について、その変数の親（直接の原因）と自分自身を説明変数とし、
-#' 因果順序でそれより下流にあるすべての変数を目的変数として、OLS（最小二乗法）による回帰係数を一括計算します。
-#' この手法は全データを繰り返し回帰計算するよりも、共分散行列を用いた行列演算によって高速に動作します。
-#'
+#' @param X 元データ (n_samples x n_features)
+#' @param lingam_result direct_lingam() の返り値
+#' @return 総合因果効果の行列 (行: 結果変数, 列: 原因変数)
 #' @importFrom stats cov
 #' @export
+#' @examples
+#' # ここの実行例を書き直し
+#' pk <- make_prior_knowledge(6, exogenous_variables = c(4))
+#'
+#' # ここの実行例を書き直し
+#' pk <- make_prior_knowledge(6,
+#'   exogenous_variables = "x3",
+#'   sink_variables = c("x1", "x4"),
+#'   paths = list(c("x3", "x0"), c("x3", "x2")),
+#'   no_paths = list(c("x5", "x2")),
+#'   labels = c("x0", "x1", "x2", "x3", "x4", "x5")
+#' )
 estimate_all_total_effects <- function(X, lingam_result) {
   X <- as.matrix(X)
   n_features <- ncol(X)
@@ -52,7 +53,14 @@ estimate_all_total_effects <- function(X, lingam_result) {
 
     # 係数行列を一括計算: β = Σ_xx^-1 Σ_xy
     # Rのsolve()は連立方程式を解くC言語ルーチンを呼び出すため極めて高速
-    beta_mat <- solve(cov_xx, cov_xy)
+    beta_mat <- tryCatch(
+      solve(cov_xx, cov_xy),
+      error = function(e) {
+        # ムーア・ペンローズ逆行列にフォールバック
+        MASS::ginv(cov_xx) %*% cov_xy
+        # または: 当該反復をスキップ
+      }
+    )
 
     # predictors の中の from_idx の位置を特定し、その行(係数)を抽出
     from_pos <- which(predictors == from_idx)[1]
