@@ -16,7 +16,7 @@
 
 #' Direct LiNGAM
 #'
-#' @param X 数値行列 (n_samples x n_features)
+#' @param X 数値行列 (n_samples x n_features), data frame or matrix
 #' @param prior_knowledge 事前知識行列 (n_features x n_features) または NULL
 #'   0: x_i から x_j への有向パスなし
 #'   1: x_i から x_j への有向パスあり
@@ -74,7 +74,7 @@ direct_lingam <- function(X,
   K <- integer(0)
   X_ <- X
   if (measure == "kernel") {
-    X_ <- apply(X_, 2, function(col) (col - mean(col)) / sd(col))
+    X_ <- apply(X_, 2, function(col) (col - mean(col)) / stats::sd(col))
   }
   # --- 因果順序の探索 ---
   for (iter in seq_len(n_features)) {
@@ -171,17 +171,25 @@ extract_partial_orders <- function(pk) {
 #' 残差ベクトルの計算
 #' @param xi 対象変数ベクトル
 #' @param xj 説明変数ベクトル
+#' @param standardized データが標準化済みか (default: FALSE)
 #' @return 回帰後の残差ベクトル
 #' @keywords internal
-residual_vec <- function(xi, xj) {
-  n <- length(xi)
-  xi_c <- xi - mean(xi)
-  xj_c <- xj - mean(xj)
-
-  cov_val <- as.numeric(crossprod(xi_c, xj_c)) / n
-  var_val <- as.numeric(crossprod(xj_c)) / n
-
-  return(xi - (cov_val / var_val) * xj)
+residual_vec <- function(xi, xj, standardized = FALSE) {
+  if (standardized) {
+    # 高速版: mean = 0 を仮定
+    beta <- sum(xi * xj) / sum(xj * xj)
+  } else {
+    # 汎用版: 中心化を含む
+    n <- length(xi)
+    mean_xi <- mean(xi)
+    mean_xj <- mean(xj)
+    xi_c <- xi - mean_xi
+    xj_c <- xj - mean_xj
+    cov_val <- sum(xi_c * xj_c) / n
+    var_val <- sum(xj_c * xj_c) / n
+    beta <- cov_val / var_val
+  }
+  xi - beta * xj
 }
 
 
@@ -207,8 +215,11 @@ entropy_approx <- function(u) {
 #' @return 相互情報量の差
 #' @keywords internal
 diff_mutual_info <- function(xi_std, xj_std, ri_j, rj_i) {
-  (entropy_approx(xj_std) + entropy_approx(ri_j / stats::sd(ri_j))) -
-    (entropy_approx(xi_std) + entropy_approx(rj_i / stats::sd(rj_i)))
+  # 残差の標準偏差（mean=0なので RMS と等価）
+  sd_ri_j <- sqrt(mean(ri_j^2))
+  sd_rj_i <- sqrt(mean(rj_i^2))
+  (entropy_approx(xj_std) + entropy_approx(ri_j / sd_ri_j)) -
+    (entropy_approx(xi_std) + entropy_approx(rj_i / sd_rj_i))
 }
 
 
@@ -289,32 +300,37 @@ search_candidate <- function(U, Aknw, apply_prior_knowledge_softly, partial_orde
 #' @return 選ばれた変数のインデックス
 #' @keywords internal
 search_causal_order_pwling <- function(X, U, Uc, Vj) {
-  if (length(Uc) == 1) {
-    return(Uc[1])
+  if (length(Uc) == 1) return(Uc[1])
+  # --- 一括で標準化（ループ前に1回だけ）---
+  X_std <- matrix(0, nrow = nrow(X), ncol = ncol(X))
+  for (k in U) {
+    xk <- X[, k]
+    X_std[, k] <- (xk - mean(xk)) / sd(xk)
   }
-
   M_list <- numeric(length(Uc))
-
-  X_std_matrix <- base::scale(X)
-
   for (idx in seq_along(Uc)) {
     i <- Uc[idx]
     M <- 0
-    xi_std <- X_std_matrix[, i] # 事前計算済みのベクトルを抽出
-
+    xi_std <- X_std[, i]
     for (j in U) {
       if (i == j) next
-      xj_std <- X_std_matrix[, j] # 事前計算済みのベクトルを抽出
-
-      ri_j <- if (i %in% Vj && j %in% Uc) xi_std else residual_vec(xi_std, xj_std)
-      rj_i <- if (j %in% Vj && i %in% Uc) xj_std else residual_vec(xj_std, xi_std)
-
+      xj_std <- X_std[, j]
+      # ★ standardized = TRUE で高速化
+      ri_j <- if (i %in% Vj && j %in% Uc) {
+        xi_std
+      } else {
+        residual_vec(xi_std, xj_std, standardized = TRUE)
+      }
+      rj_i <- if (j %in% Vj && i %in% Uc) {
+        xj_std
+      } else {
+        residual_vec(xj_std, xi_std, standardized = TRUE)
+      }
       dm <- diff_mutual_info(xi_std, xj_std, ri_j, rj_i)
       M <- M + min(0, dm)^2
     }
     M_list[idx] <- -1.0 * M
   }
-
   return(Uc[which.max(M_list)])
 }
 
@@ -466,8 +482,8 @@ estimate_adjacency_matrix <- function(X,
     # --- 回帰手法の分岐 ---
     coefs <- switch(method,
       "ols"            = fit_ols(y, Xp),
-      "lasso"          = fit_lasso(y, Xp, lambda),
-      "adaptive_lasso" = fit_adaptive_lasso(y, Xp, lambda)
+      "lasso"          = fit_lasso(y, Xp, lambda = lambda),
+      "adaptive_lasso" = fit_adaptive_lasso(y, Xp, lambda = lambda)
     )
 
     B[target, predictors] <- coefs
@@ -561,53 +577,70 @@ fit_lasso <- function(y, Xp, lambda = "AICc") {
   return(coef_vec)
 }
 
-
-#' Adaptive LASSO 回帰（情報量基準 or CV でラムダ選択）
-#'
+#' Adaptive LASSO
 #' @param y 目的変数
 #' @param Xp 説明変数行列
 #' @param lambda ラムダ選択方法 ("lambda.min", "lambda.1se", "AICc", "BIC")
 #' @param gamma_weight 重みの指数
 #' @return 係数ベクトル
 #' @keywords internal
-fit_adaptive_lasso <- function(y, Xp, lambda = "AICc", gamma_weight = 1) {
-  if (ncol(Xp) == 1) {
-    return(fit_ols(y, Xp))
-  }
+fit_adaptive_lasso <- function(y, Xp,
+                               lambda = "BIC",        # ← lambda を3番目に
+                               gamma_weight = 1.0) {  # ← gamma_weight を4番目に
+  if (ncol(Xp) == 1) return(fit_ols(y, Xp))
   if (!requireNamespace("glmnet", quietly = TRUE)) {
-    message("glmnet package is not installed. Falling back to OLS.")
     return(fit_ols(y, Xp))
   }
+
   Xp_mat <- as.matrix(Xp)
   p <- ncol(Xp_mat)
-  if (nrow(Xp_mat) > p) {
-    init_fit <- stats::lm.fit(x = cbind(1, Xp_mat), y = y)
-    init_coefs <- init_fit$coefficients[-1]
-  } else {
-    cv_ridge <- glmnet::cv.glmnet(
-      x = Xp_mat, y = y,
-      alpha = 0, intercept = TRUE, standardize = TRUE
-    )
-    init_coefs <- as.numeric(stats::coef(cv_ridge, s = cv_ridge$lambda.min))[-1]
-  }
-  weights <- 1 / (abs(init_coefs) + .Machine$double.eps)^gamma_weight
-  if (lambda %in% c("AICc", "BIC")) {
-    fit <- glmnet::glmnet(
-      x = Xp_mat, y = y,
-      alpha = 1, intercept = TRUE, standardize = TRUE,
-      penalty.factor = weights
-    )
+
+  # --- Step 0: 各変数のスケール ---
+  x_sds <- apply(Xp_mat, 2, sd)
+  x_sds[x_sds < 1e-10] <- 1e-10
+
+  # --- Step 1: 標準化されたデータで OLS ---
+  # scale() ではなく手動で標準化（属性を持たない普通の行列に）
+  x_means <- colMeans(Xp_mat)
+  Xp_std <- sweep(Xp_mat, 2, x_means, "-")
+  Xp_std <- sweep(Xp_std, 2, x_sds, "/")
+
+  init_fit <- stats::lm.fit(x = cbind(1, Xp_std), y = y)
+  init_coefs_std <- as.numeric(init_fit$coefficients[-1])  # ★ as.numeric() で確実に数値ベクトルに
+
+  # NA対策（共線性などで NA が発生する場合）
+  init_coefs_std[is.na(init_coefs_std)] <- 0
+
+  # --- Step 2: 重み計算 ---
+  weights <- abs(init_coefs_std)^gamma_weight
+  weights[weights < 1e-10] <- 1e-10
+
+  # --- Step 3: X * w を入力に LASSO ---
+  Xp_weighted <- sweep(Xp_mat, 2, weights, "*")
+
+  fit <- glmnet::glmnet(
+    x = Xp_weighted, y = y,
+    alpha = 1, intercept = TRUE, standardize = FALSE
+  )
+
+  if (lambda == "BIC") {
     ic <- ic_glmnet(fit)
-    lambda_val <- if (lambda == "AICc") ic$lambda_AICc_best else ic$lambda_BIC_best
-    coef_vec <- as.numeric(stats::coef(fit, s = lambda_val))[-1]
+    lambda_val <- ic$lambda_BIC_best
+  } else if (lambda == "AICc") {
+    ic <- ic_glmnet(fit)
+    lambda_val <- ic$lambda_AICc_best
   } else {
     cv_fit <- glmnet::cv.glmnet(
-      x = Xp_mat, y = y,
-      alpha = 1, intercept = TRUE, standardize = TRUE,
-      penalty.factor = weights
+      x = Xp_weighted, y = y, alpha = 1,
+      intercept = TRUE, standardize = FALSE
     )
     lambda_val <- cv_fit[[lambda]]
-    coef_vec <- as.numeric(stats::coef(cv_fit, s = lambda_val))[-1]
   }
+
+  coef_vec <- as.numeric(stats::coef(fit, s = lambda_val))[-1]
+
+  # --- Step 4: 重みでスケールバック ---
+  coef_vec <- coef_vec * weights
+
   return(coef_vec)
 }
