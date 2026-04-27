@@ -9,12 +9,13 @@ direct_lingam(
   prior_knowledge = NULL,
   apply_prior_knowledge_softly = FALSE,
   measure = "pwling",
-  reg_method = "lasso",
-  lambda = "AICc"
+  reg_method = "adaptive_lasso",
+  lambda = "BIC",
+  init_method = "ols"
 )
 }
 \arguments{
-\item{X}{数値行列 (n_samples x n_features)}
+\item{X}{数値行列 (n_samples x n_features), data frame or matrix}
 
 \item{prior_knowledge}{事前知識行列 (n_features x n_features) または NULL
  0: x_i から x_j への有向パスなし
@@ -27,14 +28,19 @@ direct_lingam(
 
 \item{reg_method}{隣接行列推定の回帰手法
 "ols": 最小二乗法
-"lasso": LASSO回帰、デフォルト
-"adaptive_lasso": 適応的LASSO回帰}
+"lasso": LASSO回帰
+"adaptive_lasso": 適応的LASSO回帰、デフォルト}
 
 \item{lambda}{LASSO のペナルティ（ラムダ）選択
 "lambda.min" : CV予測誤差最小
 "lambda.1se" : CV 1SEルール
-"AICc"       : AICc最小（CVなし、高速）デフォルト
-"BIC"        : BIC最小（CVなし、高速、最もスパース）}
+"AIC"       : AIC最小。高速
+"BIC"        : BIC最小（CVなし、高速、最もスパース）。デフォルト
+"oracle" ：適応的LASSO回帰のみ。オラクル性を担保したλを選択。高速}
+
+\item{init_method}{適応的LASSO回帰の初期重みの推定手法
+"ols": 最小二乗法。デフォルト
+"ridge": Ridege回帰。多重共線性が疑われる場合に適用。}
 }
 \value{
 list(adjacency_matrix, causal_order)
@@ -47,11 +53,11 @@ data(LiNGAM_sample_1000)
 
 # OLS (no additional packages required)
 result <- direct_lingam(LiNGAM_sample_1000, reg_method = "ols")
-print(round(result$adjacency_matrix, 3))
+round(result$adjacency_matrix, 3)
 
 \donttest{
 # LASSO (requires glmnet)
 result_lasso <- direct_lingam(LiNGAM_sample_1000)
-print(round(result_lasso$adjacency_matrix, 3))
+round(result_lasso$adjacency_matrix, 3)
 }
 }

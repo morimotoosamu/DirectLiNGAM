@@ -10,8 +10,8 @@ bootstrap_lingam(
   prior_knowledge = NULL,
   apply_prior_knowledge_softly = FALSE,
   measure = "pwling",
-  reg_method = "lasso",
-  lambda = "AICc",
+  reg_method = "adaptive_lasso",
+  lambda = "BIC",
   seed = NULL,
   verbose = TRUE
 )
@@ -29,7 +29,7 @@ bootstrap_lingam(
 
 \item{reg_method}{回帰手法 ("ols", "lasso", "adaptive_lasso")}
 
-\item{lambda}{ラムダ選択 ("lambda.min", "lambda.1se", "AICc", "BIC")}
+\item{lambda}{ラムダ選択 ("lambda.min", "lambda.1se", "AIC", "BIC","oracle")}
 
 \item{seed}{乱数シード (NULL可)}
 

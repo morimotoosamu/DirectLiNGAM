@@ -78,7 +78,7 @@ calculate_total_effect <- function(adjacency_matrix, from_index, to_index) {
 #' @param apply_prior_knowledge_softly 事前知識のソフト適用 (logical)
 #' @param measure 独立性の評価尺度 ("pwling" or "kernel")
 #' @param reg_method 回帰手法 ("ols", "lasso", "adaptive_lasso")
-#' @param lambda ラムダ選択 ("lambda.min", "lambda.1se", "AIC", "BIC")
+#' @param lambda ラムダ選択 ("lambda.min", "lambda.1se", "AIC", "BIC","oracle")
 #' @param seed 乱数シード (NULL可)
 #' @param verbose 進捗を表示するか (logical)
 #' @return BootstrapResult (list)
@@ -106,8 +106,8 @@ bootstrap_lingam <- function(X,
                              prior_knowledge = NULL,
                              apply_prior_knowledge_softly = FALSE,
                              measure = "pwling",
-                             reg_method = "lasso",
-                             lambda = "AIC",
+                             reg_method = "adaptive_lasso",
+                             lambda = "BIC",
                              seed = NULL,
                              verbose = TRUE) {
   X <- as.matrix(X)
@@ -615,11 +615,7 @@ plot_bootstrap_probabilities <- function(result,
   stopifnot(inherits(result, "BootstrapResult"))
 
   if (!requireNamespace("DiagrammeR", quietly = TRUE)) {
-    message("============================================================")
-    message("DiagrammeR パッケージがインストールされていません。")
-    message('  install.packages("DiagrammeR")')
-    message("============================================================")
-    return(invisible(NULL))
+    stop("Package 'DiagrammeR' is required. Please install it.", call. = FALSE)
   }
 
   bp <- get_probabilities(result, min_causal_effect)
@@ -643,7 +639,7 @@ plot_bootstrap_probabilities <- function(result,
   }
 
   if (length(edge_lines) == 0) {
-    message("指定した閾値を超えるエッジがありません。min_probability を下げてください。")
+    message("No edges exceed the specified threshold. Please lower 'min_probability'.")
     return(invisible(NULL))
   }
 
@@ -686,7 +682,7 @@ get_adjacency_matrix_summary <- function(result,
                                          labels = NULL) {
   stopifnot(inherits(result, "BootstrapResult"))
   if (!(stat %in% c("mean", "median"))) {
-    stop("stat は 'mean' または 'median' を指定してください。")
+    stop("'stat' must be either 'mean' or 'median'.")
   }
 
   if (is.null(min_causal_effect)) min_causal_effect <- 0.0

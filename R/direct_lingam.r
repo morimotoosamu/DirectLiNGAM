@@ -25,15 +25,17 @@
 #' @param measure 独立性の評価尺度 ("pwling" または "kernel")
 #' @param reg_method 隣接行列推定の回帰手法
 #'   "ols": 最小二乗法
-#'   "lasso": LASSO回帰、デフォルト
-#'   "adaptive_lasso": 適応的LASSO回帰
-#' @param init_method 適応的LASSO回帰の初期重みの推定手法 ("ols" または "ridge")
+#'   "lasso": LASSO回帰
+#'   "adaptive_lasso": 適応的LASSO回帰、デフォルト
+#' @param init_method 適応的LASSO回帰の初期重みの推定手法
+#'   "ols": 最小二乗法。デフォルト
+#'   "ridge": Ridege回帰。多重共線性が疑われる場合に適用。
 #' @param lambda LASSO のペナルティ（ラムダ）選択
 #'   "lambda.min" : CV予測誤差最小
 #'   "lambda.1se" : CV 1SEルール
-#'   "AIC"       : AIC最小（CVなし、高速）デフォルト
-#'   "BIC"        : BIC最小（CVなし、高速、最もスパース）
-#'   "oracle" ：適応的LASSO回帰のみ。オラクル性を担保したλ
+#'   "AIC"       : AIC最小。高速
+#'   "BIC"        : BIC最小（CVなし、高速、最もスパース）。デフォルト
+#'   "oracle" ：適応的LASSO回帰のみ。オラクル性を担保したλを選択。高速
 #' @return list(adjacency_matrix, causal_order)
 #' @importFrom stats sd lm.fit cov median quantile
 #' @export
@@ -42,19 +44,19 @@
 #'
 #' # OLS (no additional packages required)
 #' result <- direct_lingam(LiNGAM_sample_1000, reg_method = "ols")
-#' print(round(result$adjacency_matrix, 3))
+#' round(result$adjacency_matrix, 3)
 #'
 #' \donttest{
 #' # LASSO (requires glmnet)
 #' result_lasso <- direct_lingam(LiNGAM_sample_1000)
-#' print(round(result_lasso$adjacency_matrix, 3))
+#' round(result_lasso$adjacency_matrix, 3)
 #' }
 direct_lingam <- function(X,
                           prior_knowledge = NULL,
                           apply_prior_knowledge_softly = FALSE,
                           measure = "pwling",
                           reg_method = "adaptive_lasso",
-                          lambda = "oracle",
+                          lambda = "BIC",
                           init_method = "ols") {
   X <- as.matrix(X)
   if (!is.numeric(X)) stop("X must be a numeric matrix.")
@@ -81,8 +83,6 @@ direct_lingam <- function(X,
       pop_sd <- sqrt(mean((col - mean(col))^2))
       (col - mean(col)) / pop_sd
     })
-    # n-1割
-    # X_ <- apply(X_, 2, function(col) (col - mean(col)) / stats::sd(col))
   }
   # --- 因果順序の探索 ---
   for (iter in seq_len(n_features)) {
@@ -117,13 +117,13 @@ direct_lingam <- function(X,
 # 内部関数群
 # =============================================================================
 
-#' Population standard deviation (n割)
+#' Population standard deviation (n割り)
 #' @keywords internal
 sd_pop <- function(x) {
   sqrt(mean((x - mean(x))^2))
 }
 
-#' Variance (n割り)
+#' Population Variance (n割り)
 #' @keywords internal
 var_pop <- function(x) {
   mean((x - mean(x))^2)
@@ -231,7 +231,6 @@ entropy_approx <- function(u) {
 #' @return 相互情報量の差
 #' @keywords internal
 diff_mutual_info <- function(xi_std, xj_std, ri_j, rj_i) {
-  # 残差の母標準偏差
   sd_ri_j <- sd_pop(ri_j)
   sd_rj_i <- sd_pop(rj_i)
   (entropy_approx(xj_std) + entropy_approx(ri_j / sd_ri_j)) -
@@ -321,7 +320,7 @@ search_causal_order_pwling <- function(X, U, Uc, Vj) {
   X_std <- matrix(0, nrow = nrow(X), ncol = ncol(X))
   for (k in U) {
     xk <- X[, k]
-    X_std[, k] <- (xk - mean(xk)) / sd_pop(xk)  # ★ sd() ではなく sd_pop()
+    X_std[, k] <- (xk - mean(xk)) / sd_pop(xk)
   }
   M_list <- numeric(length(Uc))
   for (idx in seq_along(Uc)) {
@@ -331,7 +330,6 @@ search_causal_order_pwling <- function(X, U, Uc, Vj) {
     for (j in U) {
       if (i == j) next
       xj_std <- X_std[, j]
-      # ★ standardized = TRUE で高速化
       ri_j <- if (i %in% Vj && j %in% Uc) {
         xi_std
       } else {
@@ -439,38 +437,33 @@ search_causal_order_kernel <- function(X, U, Uc, Vj) {
 #'   "ols"           : 通常の最小二乗法（デフォルト）
 #'   "lasso"         : LASSO回帰（glmnet）
 #'   "adaptive_lasso": Adaptive LASSO（2段階）
-#' @param init_method: Adaptive LASSOの初期重みの推定手法 ("ols" または "ridge")
+#' @param init_method Adaptive LASSOの初期重みの推定手法
+#'   "ols"   :最小二乗法（デフォルト）
+#'   "ridge" :Ridge回帰
 #' @param lambda LASSO のペナルティ (NULL = 交差検証で自動選択)
 #'   "lambda.min" : 予測誤差最小
 #'   "lambda.1se" : 1SE ルール（よりスパース）
-#'   "AIC"       : AIC最小（CVなし、高速）デフォルト
-#'   "BIC"        : BIC最小（CVなし、高速、最もスパース）
+#'   "AIC"       : AIC最小（CVなし、高速）
+#'   "BIC"        : BIC最小（CVなし、高速、最もスパース）デフォルト
 #' @return 隣接行列 B (n_features x n_features)
 #' @keywords internal
 estimate_adjacency_matrix <- function(X,
                                       causal_order,
                                       prior_knowledge = NULL,
-                                      method = "lasso",
-                                      lambda = "AIC",
-                                      init_method = "ridge") {
+                                      method = "adaptive_lasso",
+                                      lambda = "BIC",
+                                      init_method = "ols") {
   valid_methods <- c("ols", "lasso", "adaptive_lasso")
   if (!(method %in% valid_methods)) {
     stop(sprintf(
-      "method は %s のいずれかを指定してください。",
+      "'method' must be one of: %s.",
       paste(valid_methods, collapse = ", ")
     ))
   }
 
   # glmnet の確認
-  if (method %in% c("lasso", "adaptive_lasso")) {
-    if (!requireNamespace("glmnet", quietly = TRUE)) {
-      message("============================================================")
-      message("glmnet パッケージがインストールされていません。")
-      message('  install.packages("glmnet")')
-      message("============================================================")
-      message("OLS にフォールバックします。")
-      method <- "ols"
-    }
+  if (!requireNamespace("glmnet", quietly = TRUE)) {
+    stop("Package '' is required. Please install it.", call. = FALSE)
   }
 
   n_features <- ncol(X)
@@ -563,20 +556,17 @@ ic_glmnet <- function(glmnet_model) {
 #'   "lambda.min" : CV予測誤差最小
 #'   "lambda.1se" : CV 1SEルール
 #'   "AIC"       : AIC最小
-#'   "BIC"        : BIC最小
+#'   "BIC"        : BIC最小。デフォルト
 #' @return 係数ベクトル
 #' @keywords internal
-fit_lasso <- function(y, Xp, lambda = "AIC") {
+fit_lasso <- function(y, Xp, lambda = "BIC") {
   if (ncol(Xp) == 1) {
     return(fit_ols(y, Xp))
   }
 
   # glmnet の確認
   if (!requireNamespace("glmnet", quietly = TRUE)) {
-    message("glmnet package is not installed.")
-    message("Install it with: install.packages('glmnet')")
-    message("Falling back to OLS.")
-    return(fit_ols(y, Xp))
+    stop("Package '' is required. Please install it.", call. = FALSE)
   }
 
   Xp_mat <- as.matrix(Xp)
@@ -588,7 +578,7 @@ fit_lasso <- function(y, Xp, lambda = "AIC") {
     fit <- glmnet::glmnet(
       x = Xp_mat, y = y,
       alpha = 1, intercept = TRUE, standardize = TRUE,
-      lambda = lambda_seq  # ← ここに探索範囲を追加 [cite: 59, 77]
+      lambda = lambda_seq
     )
 
     ic <- ic_glmnet(fit)
@@ -599,7 +589,7 @@ fit_lasso <- function(y, Xp, lambda = "AIC") {
     cv_fit <- glmnet::cv.glmnet(
       x = Xp_mat, y = y,
       alpha = 1, intercept = TRUE, standardize = TRUE,
-      lambda = lambda_seq  # ← CV側にも探索範囲を追加 [cite: 60, 77]
+      lambda = lambda_seq
     )
 
     lambda_val <- cv_fit[[lambda]]
@@ -621,7 +611,7 @@ fit_lasso <- function(y, Xp, lambda = "AIC") {
 fit_adaptive_lasso <- function(y, Xp,
                                lambda = "BIC",
                                gamma_weight = 1.0,
-                               init_method = "ridge") {
+                               init_method = "ols") {
   if (ncol(Xp) == 1) return(fit_ols(y, Xp))
   if (!requireNamespace("glmnet", quietly = TRUE)) {
     return(fit_ols(y, Xp))
@@ -663,8 +653,7 @@ fit_adaptive_lasso <- function(y, Xp,
   )
 
   if (lambda == "oracle") {
-    # lambda_val <- 5 / (n^(0.75))
-    lambda_val <- 5 / n^(1.75)
+    lambda_val <- 5 / (n^(1.75))
   } else if (lambda == "BIC") {
     ic <- ic_glmnet(fit)
     lambda_val <- ic$lambda_BIC_best

@@ -4,8 +4,8 @@
 #' @param lingam_result direct_lingam() の返り値
 #' @param from_index 原因変数 (1-based index or 変数名)
 #' @param to_index 結果変数 (1-based index or 変数名)
-#' @param method 回帰手法 ("ols", "lasso", "adaptive_lasso")デフォルトはlasso
-#' @param lambda ラムダ選択 ("lambda.min", "lambda.1se", "AIC", "BIC")デフォルトはAIC
+#' @param method 回帰手法 ("ols", "lasso", "adaptive_lasso")デフォルトはadaptive_lasso
+#' @param lambda ラムダ選択 ("lambda.min", "lambda.1se", "AIC", "BIC", "oracle")デフォルトはBIC
 #' @return 推定された総合因果効果
 #' @importFrom stats cov
 #' @export
@@ -18,7 +18,7 @@
 #' LiNGAM_sample_1000 |>
 #'   estimate_total_effect(model, 4, 1)
 estimate_total_effect <- function(X, lingam_result, from_index, to_index,
-                                  method = "lasso", lambda = "AIC") {
+                                  method = "adaptive_lasso", lambda = "BIC") {
   if (is.data.frame(X)) {
     col_names <- colnames(X)
     X <- as.matrix(X)

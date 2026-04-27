@@ -9,8 +9,8 @@ estimate_total_effect(
   lingam_result,
   from_index,
   to_index,
-  method = "lasso",
-  lambda = "AICc"
+  method = "adaptive_lasso",
+  lambda = "BIC"
 )
 }
 \arguments{
@@ -22,9 +22,9 @@ estimate_total_effect(
 
 \item{to_index}{結果変数 (1-based index or 変数名)}
 
-\item{method}{回帰手法 ("ols", "lasso", "adaptive_lasso")デフォルトはlasso}
+\item{method}{回帰手法 ("ols", "lasso", "adaptive_lasso")デフォルトはadaptive_lasso}
 
-\item{lambda}{ラムダ選択 ("lambda.min", "lambda.1se", "AICc", "BIC")デフォルトはAICc}
+\item{lambda}{ラムダ選択 ("lambda.min", "lambda.1se", "AIC", "BIC", "oracle")デフォルトはBIC}
 }
 \value{
 推定された総合因果効果

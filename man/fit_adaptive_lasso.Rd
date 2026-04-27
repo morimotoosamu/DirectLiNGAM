@@ -2,23 +2,31 @@
 % Please edit documentation in R/direct_lingam.r
 \name{fit_adaptive_lasso}
 \alias{fit_adaptive_lasso}
-\title{Adaptive LASSO 回帰（情報量基準 or CV でラムダ選択）}
+\title{Adaptive LASSO}
 \usage{
-fit_adaptive_lasso(y, Xp, lambda = "AICc", gamma_weight = 1)
+fit_adaptive_lasso(
+  y,
+  Xp,
+  lambda = "BIC",
+  gamma_weight = 1,
+  init_method = "ols"
+)
 }
 \arguments{
 \item{y}{目的変数}
 
 \item{Xp}{説明変数行列}
 
-\item{lambda}{ラムダ選択方法 ("lambda.min", "lambda.1se", "AICc", "BIC")}
+\item{lambda}{ラムダ選択方法 ("lambda.min", "lambda.1se", "AIC", "BIC", "oracle")}
 
 \item{gamma_weight}{重みの指数}
+
+\item{init_method}{初期重みの推定手法 ("ols" または "ridge")}
 }
 \value{
 係数ベクトル
 }
 \description{
-Adaptive LASSO 回帰（情報量基準 or CV でラムダ選択）
+Adaptive LASSO
 }
 \keyword{internal}

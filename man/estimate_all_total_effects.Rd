@@ -4,7 +4,7 @@
 \alias{estimate_all_total_effects}
 \title{全変数間の総合因果効果を一括推定}
 \usage{
-estimate_all_total_effects(X, lingam_result, method = "lasso", lambda = "AICc")
+estimate_all_total_effects(X, lingam_result, method = "lasso", lambda = "AIC")
 }
 \arguments{
 \item{X}{元データ (n_samples x n_features)}
@@ -13,7 +13,7 @@ estimate_all_total_effects(X, lingam_result, method = "lasso", lambda = "AICc")
 
 \item{method}{回帰手法 ("ols", "lasso", "adaptive_lasso")}
 
-\item{lambda}{ラムダ選択 ("lambda.min", "lambda.1se", "AICc", "BIC")}
+\item{lambda}{ラムダ選択 ("lambda.min", "lambda.1se", "AIC", "BIC")}
 }
 \value{
 総合因果効果の行列 (行: 結果変数, 列: 原因変数)

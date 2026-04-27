@@ -8,8 +8,9 @@ estimate_adjacency_matrix(
   X,
   causal_order,
   prior_knowledge = NULL,
-  method = "lasso",
-  lambda = "AICc"
+  method = "adaptive_lasso",
+  lambda = "BIC",
+  init_method = "ols"
 )
 }
 \arguments{
@@ -26,7 +27,13 @@ estimate_adjacency_matrix(
 
 \item{lambda}{LASSO のペナルティ (NULL = 交差検証で自動選択)
 "lambda.min" : 予測誤差最小
-"lambda.1se" : 1SE ルール（よりスパース、デフォルト）}
+"lambda.1se" : 1SE ルール（よりスパース）
+"AIC"       : AIC最小（CVなし、高速）
+"BIC"        : BIC最小（CVなし、高速、最もスパース）デフォルト}
+
+\item{init_method}{Adaptive LASSOの初期重みの推定手法
+"ols"   :最小二乗法（デフォルト）
+"ridge" :Ridge回帰}
 }
 \value{
 隣接行列 B (n_features x n_features)

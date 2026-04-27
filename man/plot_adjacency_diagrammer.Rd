@@ -7,9 +7,9 @@
 plot_adjacency_diagrammer(
   B,
   labels = NULL,
-  threshold = 0.01,
+  threshold = 0,
   rankdir = "TB",
-  graph_label = "Estimated Causal Structure",
+  title = "Estimated Causal Structure",
   shape = "circle",
   fillcolor = "lightyellow",
   bordercolor = "black",
@@ -25,12 +25,12 @@ plot_adjacency_diagrammer(
 
 \item{labels}{変数名ベクトル (NULL の場合は x0, x1, ... を自動生成)}
 
-\item{threshold}{表示する最小係数の絶対値 (default: 0.01)}
+\item{threshold}{表示する最小係数の絶対値 (default: 0)}
 
 \item{rankdir}{レイアウト方向 (default: "LR")
 "LR" = 左→右, "RL" = 右→左, "TB" = 上→下, "BT" = 下→上}
 
-\item{graph_label}{グラフのタイトル (default: "Estimated Causal Structure")}
+\item{title}{グラフのタイトル (default: "Estimated Causal Structure")}
 
 \item{shape}{ノードの形状 (default: "circle")
 "circle", "box", "ellipse", "diamond", "plaintext",

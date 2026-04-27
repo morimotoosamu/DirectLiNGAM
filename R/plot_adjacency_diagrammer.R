@@ -10,7 +10,7 @@
 #'
 #' @param B 隣接行列
 #' @param labels 変数名ベクトル (NULL の場合は x0, x1, ... を自動生成)
-#' @param threshold 表示する最小係数の絶対値 (default: 0.01)
+#' @param threshold 表示する最小係数の絶対値 (default: 0)
 #' @param rankdir レイアウト方向 (default: "LR")
 #'   "LR" = 左→右, "RL" = 右→左, "TB" = 上→下, "BT" = 下→上
 #' @param title グラフのタイトル (default: "Estimated Causal Structure")
@@ -37,7 +37,7 @@
 #'   plot_adjacency_diagrammer()
 plot_adjacency_diagrammer <- function(B,
                                       labels = NULL,
-                                      threshold = 0.01,
+                                      threshold = 0,
                                       rankdir = "TB",
                                       title = "Estimated Causal Structure",
                                       shape = "circle",
@@ -50,15 +50,7 @@ plot_adjacency_diagrammer <- function(B,
                                       debug = FALSE) {
   # --- DiagrammeR パッケージの確認 ---
   if (!requireNamespace("DiagrammeR", quietly = TRUE)) {
-    message("============================================================")
-    message("DiagrammeR パッケージがインストールされていません。")
-    message("以下のコマンドでインストールしてください：")
-    message("")
-    message('  install.packages("DiagrammeR")')
-    message("")
-    message("インストール後、再度この関数を実行してください。")
-    message("============================================================")
-    return(invisible(NULL))
+    stop("Package 'DiagrammeR' is required. Please install it.", call. = FALSE)
   }
 
   # --- 色名をカラーコードに変換するヘルパー ---
@@ -93,7 +85,7 @@ plot_adjacency_diagrammer <- function(B,
   valid_rankdir <- c("LR", "RL", "TB", "BT")
   if (!(rankdir %in% valid_rankdir)) {
     stop(sprintf(
-      "rankdir は %s のいずれかを指定してください。",
+      "'rankdir' must be one of: %s.",
       paste(valid_rankdir, collapse = ", ")
     ))
   }
@@ -106,7 +98,7 @@ plot_adjacency_diagrammer <- function(B,
   )
   if (!(shape %in% valid_shapes)) {
     stop(sprintf(
-      "shape は %s のいずれかを指定してください。",
+      "'shape' must be one of: %s.",
       paste(valid_shapes, collapse = ", ")
     ))
   }
@@ -133,7 +125,7 @@ plot_adjacency_diagrammer <- function(B,
   }
 
   if (length(edge_lines) == 0) {
-    message("閾値を超えるエッジが見つかりませんでした。threshold を小さくしてください。")
+    message("No edges found above the threshold. Please use a smaller 'threshold' value.")
     return(invisible(NULL))
   }
 

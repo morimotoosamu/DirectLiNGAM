@@ -5,12 +5,14 @@
 \title{残差 (xi を xj に回帰したときの残差)
 残差ベクトルの計算}
 \usage{
-residual_vec(xi, xj)
+residual_vec(xi, xj, standardized = FALSE)
 }
 \arguments{
 \item{xi}{対象変数ベクトル}
 
 \item{xj}{説明変数ベクトル}
+
+\item{standardized}{データが標準化済みか (default: FALSE)}
 }
 \value{
 回帰後の残差ベクトル

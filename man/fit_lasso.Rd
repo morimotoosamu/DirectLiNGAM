@@ -4,7 +4,7 @@
 \alias{fit_lasso}
 \title{LASSO 回帰（情報量基準 or CV でラムダ選択）}
 \usage{
-fit_lasso(y, Xp, lambda = "AICc")
+fit_lasso(y, Xp, lambda = "BIC")
 }
 \arguments{
 \item{y}{目的変数}
@@ -14,8 +14,8 @@ fit_lasso(y, Xp, lambda = "AICc")
 \item{lambda}{ラムダ選択方法
 "lambda.min" : CV予測誤差最小
 "lambda.1se" : CV 1SEルール
-"AICc"       : AICc最小
-"BIC"        : BIC最小}
+"AIC"       : AIC最小
+"BIC"        : BIC最小。デフォルト}
 }
 \value{
 係数ベクトル
