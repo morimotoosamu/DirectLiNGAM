@@ -287,7 +287,7 @@ bs_model <- x1k$data |>
 #>   iteration 10 / 30
 #>   iteration 20 / 30
 #>   iteration 30 / 30
-#> Completed in 6.4 seconds.
+#> Completed in 7.2 seconds.
 
 bs_model
 #> BootstrapResult: 30 samplings, 6 features
@@ -422,7 +422,7 @@ bs_model |>
 ``` r
 x10k <- generate_lingam_sample_10(n = 10000)
 
-x10k$data |>
+x10k$true_adjacency |>
   plot_adjacency_diagrammer(
   labels  = colnames(x10k$data),
   title   = "True causal structure",

@@ -298,7 +298,7 @@ bs_model |>
 ```{r sample1_matrix10}
 x10k <- generate_lingam_sample_10(n = 10000)
 
-x10k$data |>
+x10k$true_adjacency |>
   plot_adjacency_diagrammer(
   labels  = colnames(x10k$data),
   title   = "True causal structure",
