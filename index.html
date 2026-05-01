@@ -104,7 +104,7 @@
 <code class="sourceCode R"><span><span class="va">x1k</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/generate_lingam_sample_6.html">generate_lingam_sample_6</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">x1k</span><span class="op">$</span><span class="va">true_adjacency</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">plot_adjacency_diagrammer</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/plot_adjacency.html">plot_adjacency</a></span><span class="op">(</span></span>
 <span>  labels  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">x1k</span><span class="op">$</span><span class="va">data</span><span class="op">)</span>,</span>
 <span>  title   <span class="op">=</span> <span class="st">"True causal structure"</span>,</span>
 <span>  rankdir <span class="op">=</span> <span class="st">"TB"</span>,</span>
@@ -119,7 +119,7 @@
 <p>パス係数の算出には適応的LASSO回帰が使われます。</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="va">x1k</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">direct_lingam</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="reference/lingam_direct.html">lingam_direct</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="causal-order">Causal Order<a class="anchor" aria-label="anchor" href="#causal-order"></a>
@@ -155,7 +155,7 @@
 <p>推定された隣接行列に基づいて、因果グラフを描きます。</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="va">adjacency_matrix</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">plot_adjacency_diagrammer</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/plot_adjacency.html">plot_adjacency</a></span><span class="op">(</span></span>
 <span>      labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">model</span><span class="op">$</span><span class="va">adjacency_matrix</span><span class="op">)</span>,</span>
 <span>      title <span class="op">=</span> <span class="st">"Estimated Causal Structure (Direct LiNGAM)"</span>,</span>
 <span>      rankdir <span class="op">=</span> <span class="st">"TB"</span>,</span>
@@ -212,7 +212,7 @@
 <p>Direct LiNGAM を実行する際に、引数 <code>prior_knowledge</code> に事前知識を指定します。</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model_pk1</span> <span class="op">&lt;-</span> <span class="va">x1k</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">direct_lingam</span><span class="op">(</span>prior_knowledge <span class="op">=</span> <span class="va">pk1</span>, lambda <span class="op">=</span> <span class="st">"BIC"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="reference/lingam_direct.html">lingam_direct</a></span><span class="op">(</span>prior_knowledge <span class="op">=</span> <span class="va">pk1</span>, lambda <span class="op">=</span> <span class="st">"BIC"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Causal Order: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">x1k</span><span class="op">$</span><span class="va">data</span><span class="op">)</span><span class="op">[</span><span class="va">model_pk1</span><span class="op">$</span><span class="va">causal_order</span><span class="op">]</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Causal Order:  x3 x2 x0 x4 x5 x1</span></span></code></pre></div>
@@ -229,7 +229,7 @@
 <span><span class="co">#&gt; x5 4.015  0  0.000 0.000  0  0</span></span>
 <span></span>
 <span><span class="va">model_pk1</span><span class="op">$</span><span class="va">adjacency_matrix</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">plot_adjacency_diagrammer</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/plot_adjacency.html">plot_adjacency</a></span><span class="op">(</span></span>
 <span>    labels      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">model_pk1</span><span class="op">$</span><span class="va">adjacency_matrix</span><span class="op">)</span>,</span>
 <span>    title <span class="op">=</span> <span class="st">"Estimated (with Prior Knowledge)"</span>,</span>
 <span>    rankdir     <span class="op">=</span> <span class="st">"TB"</span>,</span>
@@ -247,7 +247,7 @@
 <p>Calculation of the p-value (default: Spearman)</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">x1k</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">direct_lingam</span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="reference/lingam_direct.html">lingam_direct</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_vals</span> <span class="op">&lt;-</span> <span class="va">x1k</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/get_error_independence_p_values.html">get_error_independence_p_values</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
@@ -297,15 +297,16 @@
 <div class="section level3">
 <h3 id="bootstrap-direct-lingam">Bootstrap Direct LiNGAM<a class="anchor" aria-label="anchor" href="#bootstrap-direct-lingam"></a>
 </h3>
+<p>まだマルチコア処理に対応していないので遅いです。</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bs_model</span> <span class="op">&lt;-</span> <span class="va">x1k</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">bootstrap_lingam</span><span class="op">(</span>n_sampling <span class="op">=</span> <span class="fl">30L</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="reference/lingam_direct_bootstrap.html">lingam_direct_bootstrap</a></span><span class="op">(</span>n_sampling <span class="op">=</span> <span class="fl">30L</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Bootstrap: 30 iterations, method=adaptive_lasso</span></span>
 <span><span class="co">#&gt;   iteration 1 / 30</span></span>
 <span><span class="co">#&gt;   iteration 10 / 30</span></span>
 <span><span class="co">#&gt;   iteration 20 / 30</span></span>
 <span><span class="co">#&gt;   iteration 30 / 30</span></span>
-<span><span class="co">#&gt; Completed in 7.2 seconds.</span></span>
+<span><span class="co">#&gt; Completed in 8.4 seconds.</span></span>
 <span></span>
 <span><span class="va">bs_model</span></span>
 <span><span class="co">#&gt; BootstrapResult: 30 samplings, 6 features</span></span></code></pre></div>
@@ -358,7 +359,7 @@
 <p>係数の可視化（係数0.5以上のパスを描画）</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bs_adjacency_matrix</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">plot_adjacency_diagrammer</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/plot_adjacency.html">plot_adjacency</a></span><span class="op">(</span></span>
 <span>    threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>    labels      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">x1k</span><span class="op">$</span><span class="va">data</span><span class="op">)</span>,</span>
 <span>    title <span class="op">=</span> <span class="st">"Estimated (with Bootstrap)"</span>,</span>
@@ -419,7 +420,7 @@
 <code class="sourceCode R"><span><span class="va">x10k</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/generate_lingam_sample_10.html">generate_lingam_sample_10</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">x10k</span><span class="op">$</span><span class="va">true_adjacency</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">plot_adjacency_diagrammer</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/plot_adjacency.html">plot_adjacency</a></span><span class="op">(</span></span>
 <span>  labels  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">x10k</span><span class="op">$</span><span class="va">data</span><span class="op">)</span>,</span>
 <span>  title   <span class="op">=</span> <span class="st">"True causal structure"</span>,</span>
 <span>  rankdir <span class="op">=</span> <span class="st">"TB"</span>,</span>

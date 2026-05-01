@@ -34,7 +34,7 @@ bs_model <- LiNGAM_sample_1000$data |>
 #>   iteration 10 / 30
 #>   iteration 20 / 30
 #>   iteration 30 / 30
-#> Completed in 1.8 seconds.
+#> Completed in 1.9 seconds.
 
 bs_model |>
   get_total_causal_effects()

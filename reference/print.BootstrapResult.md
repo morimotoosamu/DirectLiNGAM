@@ -31,7 +31,7 @@ bs_model <- LiNGAM_sample_1000$data |>
 #>   iteration 10 / 30
 #>   iteration 20 / 30
 #>   iteration 30 / 30
-#> Completed in 2.1 seconds.
+#> Completed in 2.0 seconds.
 
 bs_model |>
   print()
